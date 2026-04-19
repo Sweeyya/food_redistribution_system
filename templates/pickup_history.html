@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pickup History — reEat</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
+    <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="brand">reEat
+            <span>{% if session.role == 'provider' %}Provider Portal{% else %}Recipient Portal{% endif %}</span>
+        </div>
+        <nav>
+            {% if session.role == 'provider' %}
+            <div class="role-label">Provider</div>
+            <a href="/provider">My Listings</a>
+            <a href="/provider/new">Post New Listing</a>
+            <a href="/pickups" class="active">Pickup History</a>
+            <a href="/analytics">Analytics</a>
+            {% else %}
+            <div class="role-label">Recipient</div>
+            <a href="/recipient">Browse Listings</a>
+            <a href="/recipient/requests">My Requests</a>
+            <a href="/pickups" class="active">Pickup History</a>
+            <a href="/analytics">Analytics</a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout">&#8592; Sign Out</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1>Pickup History</h1>
+                <p>All completed pickups across providers and recipient organizations</p>
+            </div>
+            <div class="topbar-right">
+                <span class="topbar-user">Signed in as <strong>{{ session.user }}</strong></span>
+                <a href="/logout" class="btn btn-ghost btn-sm">Sign Out</a>
+            </div>
+        </div>
+
+        <div class="demo-bar">
+            <div class="demo-ops">
+                <span class="demo-op join">5-TABLE JOIN</span>
+                <span class="demo-op select">SELECT</span>
+            </div>
+            <span class="demo-desc">Each row spans: <code>pickup</code> ⟶ <code>request</code> ⟶ <code>surplus_listing</code> ⟶ <code>Food_Provider</code> ⟶ <code>recipient_organization</code></span>
+        </div>
+        <details class="sql-preview">
+            <summary>&#128196; Show JOIN SQL</summary>
+            <pre>SELECT p.*, fp.name AS provider_name, ro.name AS org_name,
+       sl.post_date, sl.total_quantity, r.requested_quantity
+FROM pickup p
+JOIN request r                ON p.request_id  = r.request_id
+JOIN surplus_listing sl       ON r.listing_id  = sl.listing_id
+JOIN Food_Provider fp         ON sl.provider_id = fp.provider_id
+JOIN recipient_organization ro ON r.org_id      = ro.org_id
+ORDER BY p.pickup_date DESC;</pre>
+        </details>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% if pickups %}
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Pickup ID</th>
+                    <th>Provider</th>
+                    <th>Recipient Org</th>
+                    <th>Pickup Date</th>
+                    <th>Pickup Time</th>
+                    <th>Confirmed Qty</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pickups %}
+                <tr>
+                    <td style="color:#aaa;">#{{ p.pickup_id }}</td>
+                    <td><strong>{{ p.provider_name }}</strong></td>
+                    <td>{{ p.org_name }}</td>
+                    <td>{{ p.pickup_date }}</td>
+                    <td>{{ p.pickup_time }}</td>
+                    <td>{{ p.confirmed_quantity }}</td>
+                    <td><span class="badge badge-{{ p.pickup_status }}">{{ p.pickup_status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No completed pickups recorded yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('overlay').classList.toggle('open');
+    }
+    </script>
+</body>
+</html>

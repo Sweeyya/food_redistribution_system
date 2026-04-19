@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Requests — reEat</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
+    <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="brand">reEat <span>Recipient Portal</span></div>
+        <nav>
+            <div class="role-label">Recipient</div>
+            <a href="/recipient">Browse Listings</a>
+            <a href="/recipient/requests" class="active">My Requests</a>
+            <a href="/pickups">Pickup History</a>
+            <a href="/analytics">Analytics</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout">&#8592; Sign Out</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1>My Requests</h1>
+                <p>Track all requests submitted by recipient organizations</p>
+            </div>
+            <div class="topbar-right">
+                <span class="topbar-user">Signed in as <strong>{{ session.user }}</strong></span>
+                <a href="/logout" class="btn btn-ghost btn-sm">Sign Out</a>
+            </div>
+        </div>
+
+        <div class="demo-bar">
+            <div class="demo-ops">
+                <span class="demo-op join">4-TABLE JOIN</span>
+                <span class="demo-op select">SELECT</span>
+            </div>
+            <span class="demo-desc">Each row combines data from: <code>request</code> ⟶ <code>surplus_listing</code> ⟶ <code>Food_Provider</code> ⟶ <code>recipient_organization</code></span>
+        </div>
+        <details class="sql-preview">
+            <summary>&#128196; Show JOIN SQL</summary>
+            <pre>SELECT r.*, sl.post_date, sl.expiration_date, sl.total_quantity,
+       fp.name AS provider_name, ro.name AS org_name
+FROM request r
+JOIN surplus_listing sl       ON r.listing_id  = sl.listing_id
+JOIN Food_Provider fp         ON sl.provider_id = fp.provider_id
+JOIN recipient_organization ro ON r.org_id      = ro.org_id
+ORDER BY r.request_date DESC;</pre>
+        </details>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% if requests %}
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Request ID</th>
+                    <th>Organization</th>
+                    <th>Provider</th>
+                    <th>Request Date</th>
+                    <th>Qty Requested</th>
+                    <th>Listing Qty</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in requests %}
+                <tr>
+                    <td style="color:#aaa;">#{{ r.request_id }}</td>
+                    <td><strong>{{ r.org_name }}</strong></td>
+                    <td>{{ r.provider_name }}</td>
+                    <td>{{ r.request_date }}</td>
+                    <td>{{ r.requested_quantity }}</td>
+                    <td>{{ r.total_quantity }}</td>
+                    <td><span class="badge badge-{{ r.status }}">{{ r.status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No requests submitted yet.</p>
+            <a href="/recipient" class="btn">Browse Available Listings</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('overlay').classList.toggle('open');
+    }
+    </script>
+</body>
+</html>

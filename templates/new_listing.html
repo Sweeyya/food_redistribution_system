@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Post New Listing — reEat</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
+    <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="brand">reEat <span>Provider Portal</span></div>
+        <nav>
+            <div class="role-label">Provider</div>
+            <a href="/provider">My Listings</a>
+            <a href="/provider/new" class="active">Post New Listing</a>
+            <a href="/pickups">Pickup History</a>
+            <a href="/analytics">Analytics</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout">&#8592; Sign Out</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1>Post New Listing</h1>
+                <p>Add a new surplus food listing to the system</p>
+            </div>
+            <div class="topbar-right">
+                <span class="topbar-user">Signed in as <strong>{{ session.user }}</strong></span>
+                <a href="/logout" class="btn btn-ghost btn-sm">Sign Out</a>
+            </div>
+        </div>
+
+        <div class="demo-bar">
+            <div class="demo-ops">
+                <span class="demo-op insert">INSERT</span>
+            </div>
+            <span class="demo-desc">Submitting this form runs <code>INSERT INTO surplus_listing</code> then <code>INSERT INTO listing_item</code> for each food item added</span>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/provider/new" class="form-section">
+
+            <!-- Listing details -->
+            <div class="form-group">
+                <label>Provider</label>
+                <select name="provider_id" required>
+                    <option value="">— Select provider —</option>
+                    {% for provider in providers %}
+                    <option value="{{ provider.provider_id }}">{{ provider.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Post Date</label>
+                <input type="date" name="post_date" required>
+            </div>
+            <div class="form-group">
+                <label>Expiration Date</label>
+                <input type="date" name="expiration_date" required>
+            </div>
+            <div class="form-group">
+                <label>Total Quantity</label>
+                <input type="number" name="total_quantity" min="1" placeholder="e.g. 50" required>
+            </div>
+
+            <!-- Food items -->
+            {% if food_items %}
+            <div class="food-items-section">
+                <h3>Food Items (optional)</h3>
+                <div id="food-items-container">
+                    <div class="food-item-row">
+                        <select name="food_id[]">
+                            <option value="">— Select food item —</option>
+                            {% for item in food_items %}
+                            <option value="{{ item.food_id }}">{{ item.food_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="number" name="item_quantity[]" min="1" placeholder="Qty">
+                        <button type="button" class="btn-remove" onclick="removeRow(this)" title="Remove">&#215;</button>
+                    </div>
+                </div>
+                <button type="button" class="add-item-btn" onclick="addFoodItem()">
+                    + Add another item
+                </button>
+            </div>
+            {% endif %}
+
+            <div class="form-actions">
+                <button type="submit" class="btn">Submit Listing</button>
+                <a href="/provider" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('overlay').classList.toggle('open');
+    }
+
+    const foodOptions = `{% for item in food_items %}<option value="{{ item.food_id }}">{{ item.food_name }}</option>{% endfor %}`;
+
+    function addFoodItem() {
+        const container = document.getElementById('food-items-container');
+        const row = document.createElement('div');
+        row.className = 'food-item-row';
+        row.innerHTML = `
+            <select name="food_id[]">
+                <option value="">— Select food item —</option>
+                ${foodOptions}
+            </select>
+            <input type="number" name="item_quantity[]" min="1" placeholder="Qty">
+            <button type="button" class="btn-remove" onclick="removeRow(this)" title="Remove">&#215;</button>
+        `;
+        container.appendChild(row);
+    }
+
+    function removeRow(btn) {
+        const container = document.getElementById('food-items-container');
+        if (container.children.length > 1) {
+            btn.closest('.food-item-row').remove();
+        }
+    }
+    </script>
+</body>
+</html>

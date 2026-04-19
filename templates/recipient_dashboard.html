@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Browse Listings — reEat</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <button class="hamburger" onclick="toggleSidebar()">&#9776;</button>
+    <div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="brand">reEat <span>Recipient Portal</span></div>
+        <nav>
+            <div class="role-label">Recipient</div>
+            <a href="/recipient" class="active">Browse Listings</a>
+            <a href="/recipient/requests">My Requests</a>
+            <a href="/pickups">Pickup History</a>
+            <a href="/analytics">Analytics</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="/logout">&#8592; Sign Out</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1>Available Listings</h1>
+                <p>Browse surplus food available for pickup</p>
+            </div>
+            <div class="topbar-right">
+                <span class="topbar-user">Signed in as <strong>{{ session.user }}</strong></span>
+                <a href="/logout" class="btn btn-ghost btn-sm">Sign Out</a>
+            </div>
+        </div>
+
+        <div class="demo-bar">
+            <div class="demo-ops">
+                <span class="demo-op insert">INSERT</span>
+                <span class="demo-op filter">SEARCH / FILTER</span>
+            </div>
+            <span class="demo-desc">Request form → <code>INSERT INTO request</code> &nbsp;·&nbsp; Search filters live query with <code>WHERE fp.name LIKE '%…%'</code></span>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="toolbar">
+            <form method="GET" action="/recipient" style="display:contents;">
+                <input class="search-input" type="text" name="search"
+                       placeholder="Search by provider name…" value="{{ search }}">
+                <button type="submit" class="btn btn-sm">Search</button>
+                {% if search %}
+                <a href="/recipient" class="btn btn-ghost btn-sm">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+
+        {% if listings %}
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Provider</th>
+                    <th>Posted</th>
+                    <th>Expires</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                    <th>Request</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for listing in listings %}
+                <tr>
+                    <td style="color:#aaa;">#{{ listing.listing_id }}</td>
+                    <td><strong>{{ listing.provider_name }}</strong></td>
+                    <td>{{ listing.post_date }}</td>
+                    <td>{{ listing.expiration_date }}</td>
+                    <td>{{ listing.total_quantity }}</td>
+                    <td><span class="badge badge-available">available</span></td>
+                    <td>
+                        <form method="POST" action="/recipient/request">
+                            <input type="hidden" name="listing_id" value="{{ listing.listing_id }}">
+                            <div class="inline-request">
+                                <select name="org_id" required>
+                                    <option value="">— Org —</option>
+                                    {% for org in orgs %}
+                                    <option value="{{ org.org_id }}">{{ org.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="number" name="requested_quantity"
+                                       placeholder="Qty" min="1"
+                                       max="{{ listing.total_quantity }}" required>
+                                <button type="submit" class="btn btn-sm">Request</button>
+                            </div>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No available listings found{% if search %} matching "{{ search }}"{% endif %}.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('overlay').classList.toggle('open');
+    }
+    </script>
+</body>
+</html>
